@@ -23,8 +23,11 @@ def generate(context:str, model:nn.Module, max_tokens:int=100, temperature:int=1
     # Setting the model to evaluation mode
     model.eval()
 
-    # Context string
+   # Context string
     context = context
+
+    # Print the context
+    print(context, end='')
 
     # Convert the context to tokens
     context_tokens = torch.Tensor([encode(context[-block_size:])]).long().to(device)
@@ -40,8 +43,12 @@ def generate(context:str, model:nn.Module, max_tokens:int=100, temperature:int=1
         next_token = torch.multinomial(torch.softmax(generated[:, -1, :], dim=-1), 
                                        num_samples=1, generator=generator).squeeze()
 
+        # Decode the generated token
+        decoded = decode([next_token.item()])[0]
+        print(decoded, end='')
+
         # Append the generated token to the context
-        context += decode([next_token.item()])[0]
+        context += decoded
 
         if context_tokens.shape[1] >= block_size:
             # Remove the first token
@@ -85,12 +92,7 @@ def main():
     transformer.to(device)
 
     # Generate the text
-    generated = generate(context, transformer, max_tokens, temperature, block_size, device, seed)
-
-    # Print the generated text
-    print(generated)
+    generate(context, transformer, max_tokens, temperature, block_size, device, seed)
 
 if __name__ == "__main__":
     main()
-
-

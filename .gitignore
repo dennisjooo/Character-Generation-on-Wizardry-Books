@@ -1,3 +1,4 @@
+# Books that you can download from the original git repo
 data/Book 1 - The Philosopher's Stone.txt
 data/Book 7 - The Deathly Hallows.txt
 data/Book 6 - The Half Blood Prince.txt
@@ -5,3 +6,6 @@ data/Book 5 - The Order of the Phoenix.txt
 data/Book 4 - The Goblet of Fire.txt
 data/Book 3 - The Prisoner of Azkaban.txt
 data/Book 2 - The Chamber of Secrets.txt
+
+# Cache files
+__pycache__/
