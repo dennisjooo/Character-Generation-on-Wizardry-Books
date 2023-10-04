@@ -3,19 +3,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 from model import TransformerModel
-import joblib
-import sys
+import json
+import argparse
 
-# Loading the stoi and itos
-maps = joblib.load('model//stoi_itos.pkl')
-stoi = maps['stoi']
-itos = maps['itos']
+# Loading the model config
+with open('model//config.json', 'r') as f:
+    config = json.load(f)
+
+# Creating the stoi and itos dictionaries
+stoi = config['stoi']
+itos = config['itos']
 
 # Creating a lambda function to convert a string to a integer
 encode = lambda s: [stoi[c] for c in s]
 
 # Creating a lambda function to convert a integer to a string
-decode = lambda i: ''.join([itos[j] for j in i])
+decode = lambda i: ''.join([itos[str(j)] for j in i])
 
 # Creating the generate function
 def generate(context:str, model:nn.Module, max_tokens:int=100, temperature:int=1, 
@@ -60,24 +63,32 @@ def generate(context:str, model:nn.Module, max_tokens:int=100, temperature:int=1
     return context
 
 def main():
-    # Check if the number of arguments is correct
-    if len(sys.argv) < 4:
-        print("Usage: python generate.py <context> <max_tokens> <temperature> <seed(optional)>")
-        return
+    # Creating the argument parser
+    parser = argparse.ArgumentParser(description='Generate text using the Transformer model')
+
+    # Adding the arguments
+    parser.add_argument('--context', type=str, help='The context to start the generation from')
+    parser.add_argument('--max_tokens', type=int, help='The maximum number of tokens to generate')
+    parser.add_argument('--temperature', type=float, help='The temperature to use for the generation', default=1.0)
+    parser.add_argument('--seed', type=int, help='The random seed to use for the generation', default=None)
+    parser.add_argument('--device', type=str, help='The device to use for the generation', default='cpu')
+
+    # Parsing the arguments
+    args = parser.parse_args()
 
     # Get the context, max tokens, temperature, and seed
-    context = sys.argv[1]
-    max_tokens = int(sys.argv[2])
-    temperature = float(sys.argv[3])
-    seed = int(sys.argv[4]) if len(sys.argv) == 5 else None
+    context = args.context
+    max_tokens = args.max_tokens
+    temperature = args.temperature
+    seed = args.seed
 
     # Hyperparameters and settings
-    vocab_size = 92
-    n_embed = 512
-    n_heads = 16
-    block_size = 32
-    n_layers = 8
-    dropout_rate = 0.1
+    vocab_size = config['vocab_size']
+    n_embed = config['n_embed']
+    n_heads = config['n_heads']
+    block_size = config['block_size']
+    n_layers = config['n_layers']
+    dropout_rate = config['dropout_rate']
 
     # Creating the model
     transformer = TransformerModel(vocab_size, n_embed, n_heads, block_size, n_layers, dropout_rate)
@@ -86,13 +97,16 @@ def main():
     transformer.load_state_dict(torch.load('model//model_weights.pth'))
 
     # Setting the device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(args.device)
 
     # Moving the model to the device
     transformer.to(device)
 
     # Generate the text
     generate(context, transformer, max_tokens, temperature, block_size, device, seed)
+
+    # Print a new line
+    print()
 
 if __name__ == "__main__":
     main()
