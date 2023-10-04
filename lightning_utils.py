@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader, Dataset, random_split
 import torch
 import lightning as L
 import torchmetrics
-import joblib
 
 
 class TransformerLightning(L.LightningModule):
@@ -90,7 +89,7 @@ class MakeDM(L.LightningDataModule):
         self.block_size = block_size
         self.num_workers = num_workers
 
-    def prepare_data(self, save_map=False) -> None:
+    def prepare_data(self) -> None:
         # Loading in the data
         with open(self.data_dir, mode='r', encoding='utf-8') as f:
             self.data_ = f.read()
@@ -98,10 +97,6 @@ class MakeDM(L.LightningDataModule):
         # Creating mapping from characters to integers and vice versa
         self.stoi_ = {ch:i for i,ch in enumerate(sorted(list(set(self.data_))))}
         self.itos_ = {i:ch for ch,i in self.stoi_.items()}
-
-        # Saving the mapping
-        if save_map:
-            joblib.dump({"stoi":self.stoi_, "itos":self.itos_}, "model//stoi_itos.pkl")
 
     def encode(self, text:str) -> list[int]:
         return [self.stoi_[ch] for ch in text]
@@ -127,3 +122,6 @@ class MakeDM(L.LightningDataModule):
     
     def val_dataloader(self) -> DataLoader:
         return DataLoader(self.valid_data_, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
+    
+    def get_maps(self) -> tuple[dict, dict]:
+        return self.stoi_, self.itos_
